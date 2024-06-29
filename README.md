@@ -1,4 +1,4 @@
-# make_fsf
+# **`make_fsf`**
 
 ## Background
 The FSL FEAT GUI  has always taken a very long time to load for me when I have more than a few EVs, inputs, or contrasts. However, manually editing this part of the .fsf document can be annoying and error prone. It's struck me as odd that this process isn't more streamlined. I thought that someone surely must have created a more modern solution in Python or R by now, but after searching off and on for a couple weeks, I didn't find one, so I made my own and thought I could share it.
