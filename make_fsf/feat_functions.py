@@ -104,9 +104,21 @@ def lowlvl_fsf(fsf_dir,
     if len(ev_files) != len(ev_names):
         raise ValueError("The number of EV files must be equal to the number of EV names.")
 
+    # --- Defining variables
+
+    # Checking if TR has been manually defined
+    if tr is None:
+        tr = utilities.tr_from_nifti(input_file)
+
+    # Checking if volumes have been manually defined
+    if total_volumes is None:
+        total_volumes = utilities.vols_from_nifti(input_file)
+
+    # Defining number of EVs and contrasts
     n_evs = len(ev_files)
     n_contrasts = len(contrasts)
     
+    # Creating an object to retain fsf text
     fsf_content = f"""
 # FEAT version number
 set fmri(version) 6.00
@@ -262,4 +274,5 @@ set fmri(conname_real.{j}) "{contrast_name}"
     with open(fsf_dir + "/design.fsf", "w") as file:
         file.write(fsf_content)
     
+    # Print if successfully completed
     print("FSF file generated successfully.")
