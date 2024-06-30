@@ -1,59 +1,79 @@
 import utilities
 
 # ----- lowlvl_fsf -----
-def lowlvl_fsf(input_file, 
-               output_dir, 
+def lowlvl_fsf(fsf_dir,
+               input_file, 
+               output_dir,
+               confound_file,
+               alternative_reference, 
                tr, 
-               highpass, 
-               confound_file, 
+               total_volumes,
                ev_files, 
                ev_names, 
-               contrasts):
-    
+               contrasts,
+               delete_volumes = 0,
+               high_pass_filter = 100,
+               motion_correction = "None",
+               b0_unwarping = False,
+               slice_timing_correction = "None",
+               brain_extraction = False,
+               spatial_smoothing = 5,
+               intensity_normalization = False,
+               perfusion_subtraction = False,
+               highpass = False,
+               melodica_ICA = False,
+               registration_reference = "/usr/local/fsl/data/standard/MNI152_T1_mm_brain",
+               linear_search = "Normal",
+               dof = "6 DOF",
+               film_prewhitening = True,
+               thresholding = "None",
+               cluster_z = 3.1,
+               cluster_p = 0.05,
+               timeseries_plot = False):
 
-
-    total_volumes = 0,
-                       delete_volumes = 0,
-                       TR = 3,
-                       high_pass_filter = 100,
-                       alternative_reference,
-                       motion_correction = c("None", "MCFLIRT"),
-                       b0_unwarping = FALSE,
-                       slide_timing_correction = c("None", "Regular Up", "Regular Down",
-                                                   "Interleaved", "Use Slice Order File",
-                                                   "Use Slice Timing File"),
-                       brain_extraction = FALSE,
-                       spatial_smoothing = 5,
-                       intensity_normalization = FALSE,
-                       perfusion_subtraction = FALSE,
-                       highpass = FALSE,
-                       melodica_ICA = FALSE,
-                       registration_reference = "/usr/local/fsl/data/standard/MNI152_T1_mm_brain",
-                       linear_search = c("None", "Normal", "Full"),
-                       dof = c("3 DOF", "6 DOF", "7 DOF",
-                               "9 DOF", "12 DOF"),
-                       film_prewhitening = TRUE,
-                       confound_file,
-                       thresholding = c("None", "Cluster"),
-                       cluster_z = 3.29,
-                       cluster_p = 0.001,
-                       timeseries_plot = False
     """
-    Generates a first level .fsf file.
+    Generates a first level .fsf file with specified parameters.
 
     Parameters:
-    file_path (str): The path to the .nii.gz file.
+    input_file (str): The path to the .nii.gz file.
+    output_dir (str): The directory where the output should be saved.
+    confound_file (str): The path to the confound file.
+    alternative_reference (str): The alternative reference for slice timing correction.
+    tr (float): Repetition time.
+    total_volumes (int): Total number of volumes.
+    ev_files (list): List of paths to EV files.
+    ev_names (list): List of names for EVs.
+    contrasts (dict): Dictionary of contrasts.
+    delete_volumes (int): Number of volumes to delete. Default is 0.
+    high_pass_filter (float): High-pass filter value. Default is 100.
+    motion_correction (str): Motion correction method. Default is "None".
+    b0_unwarping (bool): Whether to perform B0 unwarping. Default is False.
+    slice_timing_correction (str): Slice timing correction method. Default is "None".
+    brain_extraction (bool): Whether to perform brain extraction. Default is False.
+    spatial_smoothing (float): Spatial smoothing value in mm. Default is 5.
+    intensity_normalization (bool): Whether to perform intensity normalization. Default is False.
+    perfusion_subtraction (bool): Whether to perform perfusion subtraction. Default is False.
+    highpass (bool): Whether to apply highpass filter. Default is False.
+    melodica_ICA (bool): Whether to perform MELODIC ICA analysis. Default is False.
+    registration_reference (str): Registration reference file. Default is MNI152_T1_2mm_brain.
+    linear_search (str): Linear search method. Default is "Normal".
+    dof (str): Degrees of freedom for registration. Default is "6 DOF".
+    film_prewhitening (bool): Whether to perform FILM prewhitening. Default is True.
+    thresholding (str): Thresholding method. Default is "None".
+    cluster_z (float): Z-threshold for clusters. Default is 3.29.
+    cluster_p (float): P-threshold for clusters. Default is 0.001.
+    timeseries_plot (bool): Whether to generate timeseries plots. Default is False.
 
     Returns:
+    an .fsf file at the specified path
 
-    
     Example:
     lowlvl_fsf(
         input_file="path/to/your/input_file.nii.gz",
         output_dir="path/to/your/output_directory",
-        tr=2.0,
-        highpass=100,
         confound_file="path/to/your/confound_file.txt",
+        tr=2.0,
+        total_volumes=240,
         ev_files=["path/to/your/ev1.txt", "path/to/your/ev2.txt", "path/to/your/ev3.txt"],
         ev_names=["EV1", "EV2", "EV3"],
         contrasts={
@@ -61,27 +81,38 @@ def lowlvl_fsf(input_file,
             "Contrast 2": [0, 1, 0],
             "Contrast 3": [0, 0, 1]
         }
-    )
-    
+    )    
     """
+    # --- QA Checks ---
+    # Checking the file paths for inputs and outputs
+    for path in [fsf_dir, input_file, output_dir]:
+        utilities.check_directory_exists(path)
+
+    # If a confound file was submitted, checking that it exists
+    if confound_file is not None:
+        utilities.check_directory_exists(confound_file)
+    
+    # If an alternative reference file was submitted, checking that it exists
+    if alternative_reference is not None:
+        utilities.check_directory_exists(alternative_reference)
+
+    # Checking the file paths for ev files 
+    for ev in ev_files:
+        utilities.check_directory_exists(ev)
+
+    # Checking that the number of EV names matches the number of files submitted
     if len(ev_files) != len(ev_names):
         raise ValueError("The number of EV files must be equal to the number of EV names.")
 
     n_evs = len(ev_files)
     n_contrasts = len(contrasts)
     
-    if tr is None:
-        tr = tr_from_nifti(input_file)
-    
-    if volumes is None:
-        volumes 
-
     fsf_content = f"""
 # FEAT version number
 set fmri(version) 6.00
 
 # Are we in MELODIC?
-set fmri(inmelodic) 0
+set fmri(inmelodic) {1 if melodica_ICA else 0}
 
 # Analysis level
 # 1 : First-level analysis
@@ -100,10 +131,10 @@ set fmri(relative_yn) 0
 set fmri(tr) {tr}
 
 # Total volumes
-set fmri(npts) 0
+set fmri(npts) {total_volumes}
 
 # Delete volumes
-set fmri(ndelete) 0
+set fmri(ndelete) {delete_volumes}
 
 # Perfusion tag/control order
 set fmri(tagfirst) 1
@@ -128,34 +159,63 @@ set fmri(nftests_real) 0
 set fmri(parevs) 0
 
 # Number of time points
-set fmri(npts) 0
+set fmri(npts) {total_volumes}
 
 # Add temporal derivatives
 set fmri(temphp_yn) 1
 
 # Highpass temporal filtering
-set fmri(paradigm_hp) {highpass}
+set fmri(paradigm_hp) {high_pass_filter}
 
 # Motion correction
-set fmri(realign) 1
+set fmri(realign) {1 if motion_correction != "None" else 0}
 
-# BET brain extraction
-set fmri(bet_yn) 1
+# B0 unwarping
+set fmri(unwarp_dir) {1 if b0_unwarping else 0}
+
+# Slice timing correction
+set fmri(st) {1 if slice_timing_correction != "None" else 0}
+set fmri(st_yn) {1 if slice_timing_correction != "None" else 0}
+set fmri(st_refslice) {alternative_reference}
+
+# Brain extraction
+set fmri(bet_yn) {1 if brain_extraction else 0}
 
 # Spatial smoothing FWHM (mm)
-set fmri(smooth) 5.0
+set fmri(smooth) {spatial_smoothing}
 
 # Intensity normalization
-set fmri(norm_yn) 1
-
-# Z-transformation
-set fmri(zg) 0
+set fmri(norm_yn) {1 if intensity_normalization else 0}
 
 # Perfusion subtraction
-set fmri(perfsub) 0
+set fmri(perfsub) {1 if perfusion_subtraction else 0}
 
-# Perfusion subtraction T1
-set fmri(perfsubthresh) 0
+# Highpass filter
+set fmri(paradigm_hp) {1 if highpass else 0}
+
+# MELODIC ICA
+set fmri(melodic) {1 if melodica_ICA else 0}
+
+# Registration reference
+set fmri(regstandard) {registration_reference}
+
+# Linear search
+set fmri(reghighres_yn) {linear_search}
+
+# Degrees of freedom
+set fmri(dof) {dof}
+
+# FILM prewhitening
+set fmri(prewhiten) {1 if film_prewhitening else 0}
+
+# Thresholding
+set fmri(thresh) {thresholding}
+
+# Cluster Z-threshold
+set fmri(thresh_z) {cluster_z}
+
+# Cluster P-threshold
+set fmri(thresh_p) {cluster_p}
 
 # Confound EVs text file
 set fmri(confoundevs) 1
@@ -164,21 +224,6 @@ set confoundev_files(1) "{confound_file}"
 # Add motion parameters to model
 set fmri(motionevs) 0
 set fmri(motionevsbeta) ""
-
-# Slice timing correction
-set fmri(st) 1
-
-# Slice timing correction method
-set fmri(st_yn) 0
-
-# Alternative reference slice (0 means bottom)
-set fmri(st_refslice) 0
-
-# Bias field correction
-set fmri(bias_yn) 1
-
-# Thresholding
-set fmri(thresh) 1000
 
 # First-level analysis output directory
 set fmri(outputdir) "{output_dir}"
@@ -214,8 +259,7 @@ set fmri(conname_real.{j}) "{contrast_name}"
 
     fsf_content += "\n# Now run FEAT\nset fmri(overwrite_yn) 1\n"
     
-    with open(output_dir + "/design.fsf", "w") as file:
+    with open(fsf_dir + "/design.fsf", "w") as file:
         file.write(fsf_content)
     
     print("FSF file generated successfully.")
-

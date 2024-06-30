@@ -1,39 +1,51 @@
 import nibabel as nib
+import os
+
+# ----- check_directory_exists
+def check_directory_exists(file_path):
+    if not os.path.isdir(file_path):
+        raise FileNotFoundError(f"The directory or file {file_path} does not exist.")
 
 # ----- vols_from_nifti -----
-def vols_from_nifti(file_path):
+def vols_from_nifti(input_file):
     """
     Reads the number of volumes from a NIfTI file.
 
     Parameters:
-    file_path (str): The path to the .nii.gz file.
+    input_file (str): The path to the .nii.gz file.
 
     Returns:
     float: The number of volumes within the .nii.gz file, or None if not found.
     """
+    check_directory_exists(input_file)
+    
     try:
-        nifti = nib.load(file_path)
+        nifti = nib.load(input_file)
         data = nifti.get_fdata()
         num_volumes = data.shape[-1]  # Assuming last dimension represents time points
         return num_volumes
+    
     except Exception as e:
-        print(f"Error loading or processing {file_path}: {e}")
+        print(f"Error loading or processing {input_file}: {e}")
         return None
 
 # ----- tr_from_nifti -----
-def tr_from_nifti(file_path):
+def tr_from_nifti(input_file):
     """
     Reads the repetition time (TR) from a NIfTI file.
 
     Parameters:
-    file_path (str): The path to the .nii.gz file.
+    input_file (str): The path to the .nii.gz file.
 
     Returns:
     float: The repetition time (TR) in seconds, or None if not found.
-    """
+    """   
+    if not os.path.exists(input_file):
+        raise FileNotFoundError(f"The input file {input_file} does not exist.")
+  
     try:
         # Load the NIfTI file
-        img = nib.load(file_path)
+        img = nib.load(input_file)
         
         # Get the header information
         header = img.header
