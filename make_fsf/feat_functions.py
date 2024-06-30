@@ -1,10 +1,81 @@
-def generate_fsf(input_file, output_dir, tr, highpass, confound_file, ev_files, ev_names, contrasts):
+import utilities
+
+# ----- lowlvl_fsf -----
+def lowlvl_fsf(input_file, 
+               output_dir, 
+               tr, 
+               highpass, 
+               confound_file, 
+               ev_files, 
+               ev_names, 
+               contrasts):
+    
+
+
+    total_volumes = 0,
+                       delete_volumes = 0,
+                       TR = 3,
+                       high_pass_filter = 100,
+                       alternative_reference,
+                       motion_correction = c("None", "MCFLIRT"),
+                       b0_unwarping = FALSE,
+                       slide_timing_correction = c("None", "Regular Up", "Regular Down",
+                                                   "Interleaved", "Use Slice Order File",
+                                                   "Use Slice Timing File"),
+                       brain_extraction = FALSE,
+                       spatial_smoothing = 5,
+                       intensity_normalization = FALSE,
+                       perfusion_subtraction = FALSE,
+                       highpass = FALSE,
+                       melodica_ICA = FALSE,
+                       registration_reference = "/usr/local/fsl/data/standard/MNI152_T1_mm_brain",
+                       linear_search = c("None", "Normal", "Full"),
+                       dof = c("3 DOF", "6 DOF", "7 DOF",
+                               "9 DOF", "12 DOF"),
+                       film_prewhitening = TRUE,
+                       confound_file,
+                       thresholding = c("None", "Cluster"),
+                       cluster_z = 3.29,
+                       cluster_p = 0.001,
+                       timeseries_plot = False
+    """
+    Generates a first level .fsf file.
+
+    Parameters:
+    file_path (str): The path to the .nii.gz file.
+
+    Returns:
+
+    
+    Example:
+    lowlvl_fsf(
+        input_file="path/to/your/input_file.nii.gz",
+        output_dir="path/to/your/output_directory",
+        tr=2.0,
+        highpass=100,
+        confound_file="path/to/your/confound_file.txt",
+        ev_files=["path/to/your/ev1.txt", "path/to/your/ev2.txt", "path/to/your/ev3.txt"],
+        ev_names=["EV1", "EV2", "EV3"],
+        contrasts={
+            "Contrast 1": [1, 0, 0],
+            "Contrast 2": [0, 1, 0],
+            "Contrast 3": [0, 0, 1]
+        }
+    )
+    
+    """
     if len(ev_files) != len(ev_names):
         raise ValueError("The number of EV files must be equal to the number of EV names.")
 
     n_evs = len(ev_files)
     n_contrasts = len(contrasts)
     
+    if tr is None:
+        tr = tr_from_nifti(input_file)
+    
+    if volumes is None:
+        volumes 
+
     fsf_content = f"""
 # FEAT version number
 set fmri(version) 6.00
@@ -148,18 +219,3 @@ set fmri(conname_real.{j}) "{contrast_name}"
     
     print("FSF file generated successfully.")
 
-# Example usage
-generate_fsf(
-    input_file="path/to/your/input_file.nii.gz",
-    output_dir="path/to/your/output_directory",
-    tr=2.0,
-    highpass=100,
-    confound_file="path/to/your/confound_file.txt",
-    ev_files=["path/to/your/ev1.txt", "path/to/your/ev2.txt", "path/to/your/ev3.txt"],
-    ev_names=["EV1", "EV2", "EV3"],
-    contrasts={
-        "Contrast 1": [1, 0, 0],
-        "Contrast 2": [0, 1, 0],
-        "Contrast 3": [0, 0, 1]
-    }
-)
