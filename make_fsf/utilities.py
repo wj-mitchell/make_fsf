@@ -67,3 +67,23 @@ def tr_from_nifti(input_file):
     except Exception as e:
         print(f"An error occurred while reading the NIfTI file: {e}")
         return None
+    
+# ----- voxels_from_nifti -----
+def voxels_from_nifti(input_file):
+    """
+    Reads the number of voxels contained within a NIfTI file.
+
+    Parameters:
+    input_file (str): The path to the .nii.gz file.
+
+    Returns:
+    float: The number of voxels contained, or None if not found.
+    """   
+    try:
+        nifti = nib.load(input_file)
+        data = nifti.get_fdata()
+        num_voxels = data.size  # Total number of elements in the data array
+        return num_voxels
+    except Exception as e:
+        print(f"Error loading or processing {input_file}: {e}")
+        return None

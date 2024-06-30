@@ -24,7 +24,7 @@ def lowlvl_fsf(fsf_dir,
                melodica_ICA = False,
                registration_reference = "/usr/local/fsl/data/standard/MNI152_T1_mm_brain",
                linear_search = "Normal",
-               dof = "6 DOF",
+               dof, # Respecify a value for this
                film_prewhitening = True,
                thresholding = "None",
                cluster_z = 3.1,
@@ -134,10 +134,18 @@ set fmri(level) 1
 # Which stages to run
 # 0 : No first-level analysis (registration and/or group stats only)
 # 7 : Full first-level analysis
+# 1 : Pre-processing
+# 2 : Statistics
 set fmri(analysis) 7
 
 # Use relative filenames
 set fmri(relative_yn) 0
+
+# Cleanup first-level standard-space images
+set fmri(sscleanup_yn) 0
+
+# First-level analysis output directory
+set fmri(outputdir) "{output_dir}"
 
 # TR(s)
 set fmri(tr) {tr}
@@ -151,8 +159,113 @@ set fmri(ndelete) {delete_volumes}
 # Perfusion tag/control order
 set fmri(tagfirst) 1
 
-# Number of first-level designs
-set fmri(multilev_yn) 0
+# Number of first-level analyses
+set fmri(multiple) 1
+
+# Higher-level input type
+# 1 : Inputs are lower-level FEAT directories
+# 2 : Inputs are cope images from FEAT directories
+set fmri(inputtype) 2
+
+# Carry out pre-stats processing?
+set fmri(filtering_yn) 1
+
+# Brain/background threshold, %
+set fmri(brain_thresh) 10
+
+# Critical z for design efficiency calculation
+set fmri(critical_z) 5.3
+
+# Noise level
+set fmri(noise) 0.66
+
+# Noise AR(1)
+set fmri(noisear) 0.34
+
+# Motion correction
+# 0 : None
+# 1 : MCFLIRT
+set fmri(mc) {1 if motion_correction != "None" else 0}
+
+# Spin-history (currently obsolete)
+set fmri(sh_yn) 0
+
+# B0 fieldmap unwarping?
+set fmri(regunwarp_yn) {1 if b0_unwarping else 0}
+
+# GDC Test
+set fmri(gdc) ""
+
+# EPI dwell time (ms)
+set fmri(dwell) 0.0
+
+# EPI TE (ms)
+set fmri(te) 0.0
+
+# % Signal loss threshold
+set fmri(signallossthresh) 10
+
+# Unwarp direction
+set fmri(unwarp_dir) y-
+
+# Slice timing correction
+# 0 : None
+# 1 : Regular up (0, 1, 2, 3, ...)
+# 2 : Regular down
+# 3 : Use slice order file
+# 4 : Use slice timings file
+# 5 : Interleaved (0, 2, 4 ... 1, 3, 5 ... )
+set fmri(st) {1 if slice_timing_correction != "None" else 0}
+
+# Slice timings file
+set fmri(st_file) ""
+
+# BET brain extraction
+set fmri(bet_yn) {1 if brain_extraction else 0}
+
+# Spatial smoothing FWHM (mm)
+set fmri(smooth) {spatial_smoothing}
+
+# Intensity normalization
+set fmri(norm_yn) {1 if intensity_normalization else 0}
+
+# Perfusion subtraction
+set fmri(perfsub_yn) {1 if perfusion_subtraction else 0}
+
+# Highpass temporal filtering
+set fmri(temphp_yn) {1 if highpass else 0}
+
+# Lowpass temporal filtering
+set fmri(templp_yn) 0
+
+# MELODIC ICA data exploration
+set fmri(melodic_yn) {1 if melodica_ICA else 0}
+
+# Carry out main stats?
+set fmri(stats_yn) 1
+
+# Carry out prewhitening?
+set fmri(prewhiten_yn) {1 if film_prewhitening else 0}
+
+# Add motion parameters to model
+# 0 : No
+# 1 : Yes
+set fmri(motionevs) 0
+set fmri(motionevsbeta) ""
+set fmri(scriptevsbeta) ""
+
+# Robust outlier detection in FLAME?
+set fmri(robust_yn) 0
+
+# Higher-level modelling
+# 3 : Fixed effects
+# 0 : Mixed Effects: Simple OLS
+# 2 : Mixed Effects: FLAME 1
+# 1 : Mixed Effects: FLAME 1+2
+set fmri(mixed_yn) 2
+
+# Higher-level permutations
+set fmri(randomisePermutations) 5000
 
 # Number of EVs
 set fmri(evs_orig) {n_evs}
@@ -167,110 +280,210 @@ set fmri(ncon_real) {n_contrasts}
 set fmri(nftests_orig) 0
 set fmri(nftests_real) 0
 
-# Number of parametric EVs
-set fmri(parevs) 0
+# Add constant column to design matrix? (obsolete)
+set fmri(constcol) 0
 
-# Number of time points
-set fmri(npts) {total_volumes}
+# Carry out post-stats steps?
+set fmri(poststats_yn) 1
 
-# Add temporal derivatives
-set fmri(temphp_yn) 1
-
-# Highpass temporal filtering
-set fmri(paradigm_hp) {high_pass_filter}
-
-# Motion correction
-set fmri(realign) {1 if motion_correction != "None" else 0}
-
-# B0 unwarping
-set fmri(unwarp_dir) {1 if b0_unwarping else 0}
-
-# Slice timing correction
-set fmri(st) {1 if slice_timing_correction != "None" else 0}
-set fmri(st_yn) {1 if slice_timing_correction != "None" else 0}
-set fmri(st_refslice) {alternative_reference}
-
-# Brain extraction
-set fmri(bet_yn) {1 if brain_extraction else 0}
-
-# Spatial smoothing FWHM (mm)
-set fmri(smooth) {spatial_smoothing}
-
-# Intensity normalization
-set fmri(norm_yn) {1 if intensity_normalization else 0}
-
-# Perfusion subtraction
-set fmri(perfsub) {1 if perfusion_subtraction else 0}
-
-# Highpass filter
-set fmri(paradigm_hp) {1 if highpass else 0}
-
-# MELODIC ICA
-set fmri(melodic) {1 if melodica_ICA else 0}
-
-# Registration reference
-set fmri(regstandard) {registration_reference}
-
-# Linear search
-set fmri(reghighres_yn) {linear_search}
-
-# Degrees of freedom
-set fmri(dof) {dof}
-
-# FILM prewhitening
-set fmri(prewhiten) {1 if film_prewhitening else 0}
+# Pre-threshold masking?
+set fmri(threshmask) ""
 
 # Thresholding
+# 0 : None
+# 1 : Uncorrected
+# 2 : Voxel
+# 3 : Cluster
 set fmri(thresh) {thresholding}
 
-# Cluster Z-threshold
-set fmri(thresh_z) {cluster_z}
+# P threshold
+set fmri(prob_thresh) {cluster_p}
 
-# Cluster P-threshold
-set fmri(thresh_p) {cluster_p}
+# Z threshold
+set fmri(z_thresh) {cluster_z}
 
-# Confound EVs text file
+# Z min/max for colour rendering
+# 0 : Use actual Z min/max
+# 1 : Use preset Z min/max
+set fmri(zdisplay) 0
+
+# Z min in colour rendering
+set fmri(zmin) 2
+
+# Z max in colour rendering
+set fmri(zmax) 8
+
+# Colour rendering type
+# 0 : Solid blobs
+# 1 : Transparent blobs
+set fmri(rendertype) 1
+
+# Background image for higher-level stats overlays
+# 1 : Mean highres
+# 2 : First highres
+# 3 : Mean functional
+# 4 : First functional
+# 5 : Standard space template
+set fmri(bgimage) 1
+
+# Create time series plots
+set fmri(tsplot_yn) 0
+
+# Registration to initial structural
+set fmri(reginitial_highres_yn) 0
+
+# Search space for registration to initial structural
+# 0   : No search
+# 90  : Normal search
+# 180 : Full search
+set fmri(reginitial_highres_search) 90
+
+# Degrees of Freedom for registration to initial structural
+set fmri(reginitial_highres_dof) 3
+
+# Registration to main structural
+set fmri(reghighres_yn) 0
+
+# Search space for registration to main structural
+# 0   : No search
+# 90  : Normal search
+# 180 : Full search
+set fmri(reghighres_search) 90
+
+# Degrees of Freedom for registration to main structural
+set fmri(reghighres_dof) BBR
+
+# Registration to standard image?
+set fmri(regstandard_yn) 1
+
+# Use alternate reference images?
+set fmri(alternateReference_yn) 0
+
+# Standard image
+set fmri(regstandard) "/usr/local/fsl/data/standard/MNI152_T1_2mm_brain"
+
+# Search space for registration to standard space
+# 0   : No search
+# 90  : Normal search
+# 180 : Full search
+set fmri(regstandard_search) 180
+
+# Degrees of Freedom for registration to standard space
+set fmri(regstandard_dof) 12
+
+# Do nonlinear registration from structural to standard space?
+set fmri(regstandard_nonlinear_yn) 0
+
+# Control nonlinear warp field resolution
+set fmri(regstandard_nonlinear_warpres) 10
+
+# High pass filter cutoff
+set fmri(paradigm_hp) {high_pass_filter}
+
+# Total voxels
+set fmri(totalVoxels) {utilities.voxels_from_nifti}
+
+# Number of lower-level copes feeding into higher-level analysis
+set fmri(ncopeinputs) 0
+
+# 4D AVW data or FEAT directory (1)
+set feat_files(1) "{input_file}"
+
+# Add confound EVs text file
 set fmri(confoundevs) 1
+
+# Confound EVs text file for analysis 1
 set confoundev_files(1) "{confound_file}"
 
-# Add motion parameters to model
-set fmri(motionevs) 0
-set fmri(motionevsbeta) ""
-
-# First-level analysis output directory
-set fmri(outputdir) "{output_dir}"
-
-# Input filename
-set feat_files(1) "{input_file}"
     """
 
     # Adding EVs
     for i, (ev_file, ev_name) in enumerate(zip(ev_files, ev_names), start=1):
         fsf_content += f"""
-# EV {i} - {ev_name}
+# EV {i} title
 set fmri(evtitle{i}) "{ev_name}"
+
+# Basic waveform shape (EV {i})
+# 0 : Square
+# 1 : Sinusoid
+# 2 : Custom (1 entry per volume)
+# 3 : Custom (3 column format)
+# 4 : Interaction
+# 10 : Empty (all zeros)
 set fmri(shape{i}) 3
+
+# Convolution (EV {i})
+# 0 : None
+# 1 : Gaussian
+# 2 : Gamma
+# 3 : Double-Gamma HRF
+# 4 : Gamma basis functions
+# 5 : Sine basis functions
+# 6 : FIR basis functions
+# 8 : Alternate Double-Gamma
 set fmri(convolve{i}) 3
+
+# Convolve phase (EV {i})
 set fmri(convolve_phase{i}) 0
+
+# Apply temporal filtering (EV {i})
 set fmri(tempfilt_yn{i}) 1
+
+# Add temporal derivative (EV {i})
 set fmri(deriv_yn{i}) 1
+
+# Custom EV file (EV {i})
 set fmri(custom{i}) "{ev_file}"
         """
 
+###################################################
+# NOTE: FIND A WAY TO ADD ORTHOGONALIZATION HERE
+# # Orthogonalise EV {i} wrt EV {x}
+# set fmri(ortho{i}.{x}) 0
+##################################################
+    
     # Adding contrasts
-    fsf_content += "\n# Contrast & F-tests mode\nset fmri(con_mode_old) 0\nset fmri(con_mode) 1\n"
+    fsf_content += f"""
+# Contrast & F-tests mode
+# real : control real EVs
+# orig : control original EVs
+set fmri(con_mode_old) orig
+set fmri(con_mode) orig
+
+        """
     
     for j, (contrast_name, contrast_values) in enumerate(contrasts.items(), start=1):
         fsf_content += f"""
-# Contrast {j} - {contrast_name}
+# Display images for contrast_real {j}
 set fmri(conpic_real.{j}) 1
+
+# Title for contrast_real {j}
 set fmri(conname_real.{j}) "{contrast_name}"
         """
+
         for k, value in enumerate(contrast_values, start=1):
             fsf_content += f"set fmri(con_real{j}.{k}) {value}\n"
 
-    fsf_content += "\n# Now run FEAT\nset fmri(overwrite_yn) 1\n"
-    
+    fsf_content += f"""
+##########################################################
+# Now options that don't appear in the GUI
+
+# Alternative (to BETting) mask image
+set fmri(alternative_mask) ""
+
+# Initial structural space registration initialisation transform
+set fmri(init_initial_highres) ""
+
+# Structural space registration initialisation transform
+set fmri(init_highres) ""
+
+# Standard space registration initialisation transform
+set fmri(init_standard) ""
+
+# For full FEAT analysis: overwrite existing .feat output dir?
+set fmri(overwrite_yn) 0
+        """
+
     with open(fsf_dir + "/design.fsf", "w") as file:
         file.write(fsf_content)
     
