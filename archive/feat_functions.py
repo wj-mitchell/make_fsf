@@ -5,20 +5,31 @@ def lowlvl_fsf(fsf_dir,
                input_file, 
                output_dir,
                confound_file,
+               alternative_reference,
                tr, 
                total_volumes,
                ev_files, 
                ev_names, 
                contrasts,
-               prethresh_masking,
                delete_volumes = 0,
                high_pass_filter = 100,
+               motion_correction = "None",
+               b0_unwarping = False,
+               slice_timing_correction = "None",
+               brain_extraction = False,
+               spatial_smoothing = 5,
+               intensity_normalization = False,
+               perfusion_subtraction = False,
+               highpass = False,
+               melodica_ICA = False,
+               registration_reference = "/usr/local/fsl/data/standard/MNI152_T1_mm_brain",
+               linear_search = "Normal",
+               reg_dof = 12, # Respecify a value for this
                film_prewhitening = True,
-               add_motion_parameters = True,
-               thresholding = "Cluster",
+               thresholding = "None",
                cluster_z = 3.1,
                cluster_p = 0.05,
-               timeseries_plot = True):
+               timeseries_plot = False):
 
     """
     Generates a first level .fsf file with specified parameters.
@@ -27,6 +38,7 @@ def lowlvl_fsf(fsf_dir,
     input_file (str): The path to the .nii.gz file.
     output_dir (str): The directory where the output should be saved.
     confound_file (str): The path to the confound file.
+    alternative_reference (str): An alternative reference for slice timing correction.
     tr (float): Repetition time.
     total_volumes (int): Total number of volumes.
     ev_files (list): List of paths to EV files.
@@ -34,6 +46,18 @@ def lowlvl_fsf(fsf_dir,
     contrasts (dict): Dictionary of contrasts.
     delete_volumes (int): Number of volumes to delete. Default is 0.
     high_pass_filter (float): High-pass filter value. Default is 100.
+    motion_correction (str): Motion correction method. Default is "None".
+    b0_unwarping (bool): Whether to perform B0 unwarping. Default is False.
+    slice_timing_correction (str): Slice timing correction method. Default is "None".
+    brain_extraction (bool): Whether to perform brain extraction. Default is False.
+    spatial_smoothing (float): Spatial smoothing value in mm. Default is 5.
+    intensity_normalization (bool): Whether to perform intensity normalization. Default is False.
+    perfusion_subtraction (bool): Whether to perform perfusion subtraction. Default is False.
+    highpass (bool): Whether to apply highpass filter. Default is False.
+    melodica_ICA (bool): Whether to perform MELODIC ICA analysis. Default is False.
+    registration_reference (str): Registration reference file. Default is MNI152_T1_2mm_brain.
+    linear_search (str): Linear search method. Default is "Normal".
+    reg_dof (str): Degrees of freedom for registration. Default is 12.
     film_prewhitening (bool): Whether to perform FILM prewhitening. Default is True.
     thresholding (str): Thresholding method. Default is "None".
     cluster_z (float): Z-threshold for clusters. Default is 3.29.
@@ -95,6 +119,9 @@ def lowlvl_fsf(fsf_dir,
 # FEAT version number
 set fmri(version) 6.00
 
+# Are we in MELODIC?
+set fmri(inmelodic) {1 if melodica_ICA else 0}
+
 # Analysis level
 # 1 : First-level analysis
 # 2 : Higher-level analysis
@@ -131,6 +158,11 @@ set fmri(tagfirst) 1
 # Number of first-level analyses
 set fmri(multiple) 1
 
+# Higher-level input type
+# 1 : Inputs are lower-level FEAT directories
+# 2 : Inputs are cope images from FEAT directories
+set fmri(inputtype) 2
+
 # Carry out pre-stats processing?
 set fmri(filtering_yn) 1
 
@@ -146,8 +178,16 @@ set fmri(noise) 0.66
 # Noise AR(1)
 set fmri(noisear) 0.34
 
+# Motion correction
+# 0 : None
+# 1 : MCFLIRT
+set fmri(mc) {1 if motion_correction != "None" else 0}
+
 # Spin-history (currently obsolete)
 set fmri(sh_yn) 0
+
+# B0 fieldmap unwarping?
+set fmri(regunwarp_yn) {1 if b0_unwarping else 0}
 
 # GDC Test
 set fmri(gdc) ""
@@ -164,6 +204,39 @@ set fmri(signallossthresh) 10
 # Unwarp direction
 set fmri(unwarp_dir) y-
 
+# Slice timing correction
+# 0 : None
+# 1 : Regular up (0, 1, 2, 3, ...)
+# 2 : Regular down
+# 3 : Use slice order file
+# 4 : Use slice timings file
+# 5 : Interleaved (0, 2, 4 ... 1, 3, 5 ... )
+set fmri(st) {1 if slice_timing_correction != "None" else 0}
+
+# Slice timings file
+set fmri(st_file) ""
+
+# BET brain extraction
+set fmri(bet_yn) {1 if brain_extraction else 0}
+
+# Spatial smoothing FWHM (mm)
+set fmri(smooth) {spatial_smoothing}
+
+# Intensity normalization
+set fmri(norm_yn) {1 if intensity_normalization else 0}
+
+# Perfusion subtraction
+set fmri(perfsub_yn) {1 if perfusion_subtraction else 0}
+
+# Highpass temporal filtering
+set fmri(temphp_yn) {1 if highpass else 0}
+
+# Lowpass temporal filtering
+set fmri(templp_yn) 0
+
+# MELODIC ICA data exploration
+set fmri(melodic_yn) {1 if melodica_ICA else 0}
+
 # Carry out main stats?
 set fmri(stats_yn) 1
 
@@ -173,7 +246,22 @@ set fmri(prewhiten_yn) {1 if film_prewhitening else 0}
 # Add motion parameters to model
 # 0 : No
 # 1 : Yes
-set fmri(motionevs) {1 if add_motion_parameters else 0}
+set fmri(motionevs) 0
+set fmri(motionevsbeta) ""
+set fmri(scriptevsbeta) ""
+
+# Robust outlier detection in FLAME?
+set fmri(robust_yn) 0
+
+# Higher-level modelling
+# 3 : Fixed effects
+# 0 : Mixed Effects: Simple OLS
+# 2 : Mixed Effects: FLAME 1
+# 1 : Mixed Effects: FLAME 1+2
+set fmri(mixed_yn) 2
+
+# Higher-level permutations
+set fmri(randomisePermutations) 5000
 
 # Number of EVs
 set fmri(evs_orig) {n_evs}
@@ -195,7 +283,7 @@ set fmri(constcol) 0
 set fmri(poststats_yn) 1
 
 # Pre-threshold masking?
-set fmri(threshmask) "{prethresh_masking if prethresh_masking is not None else ""}"
+set fmri(threshmask) ""
 
 # Thresholding
 # 0 : None
@@ -237,6 +325,54 @@ set fmri(bgimage) 1
 # Create time series plots
 set fmri(tsplot_yn) {1 if timeseries_plot else 0}
 
+# Registration to initial structural
+set fmri(reginitial_highres_yn) 0
+
+# Search space for registration to initial structural
+# 0   : No search
+# 90  : Normal search
+# 180 : Full search
+set fmri(reginitial_highres_search) 90
+
+# Degrees of Freedom for registration to initial structural
+set fmri(reginitial_highres_dof) 3
+
+# Registration to main structural
+set fmri(reghighres_yn) 0
+
+# Search space for registration to main structural
+# 0   : No search
+# 90  : Normal search
+# 180 : Full search
+set fmri(reghighres_search) 90
+
+# Degrees of Freedom for registration to main structural
+set fmri(reghighres_dof) BBR
+
+# Registration to standard image?
+set fmri(regstandard_yn) 1
+
+# Use alternate reference images?
+set fmri(alternateReference_yn) {1 if alternative_reference else 0}
+
+# Standard image
+set fmri(regstandard) "/usr/local/fsl/data/standard/MNI152_T1_2mm_brain"
+
+# Search space for registration to standard space
+# 0   : No search
+# 90  : Normal search
+# 180 : Full search
+set fmri(regstandard_search) 180
+
+# Degrees of Freedom for registration to standard space
+set fmri(regstandard_dof) {reg_dof}
+
+# Do nonlinear registration from structural to standard space?
+set fmri(regstandard_nonlinear_yn) 0
+
+# Control nonlinear warp field resolution
+set fmri(regstandard_nonlinear_warpres) 10
+
 # High pass filter cutoff
 set fmri(paradigm_hp) {high_pass_filter}
 
@@ -250,7 +386,7 @@ set fmri(ncopeinputs) 0
 set feat_files(1) "{input_file}"
 
 # Add confound EVs text file
-set fmri(confoundevs) {1 if confound_file is not None else 0}
+set fmri(confoundevs) {1 if confound_file is not else 0}
 
 # Confound EVs text file for analysis 1
 set confoundev_files(1) "{confound_file}"
